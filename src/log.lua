@@ -1,5 +1,10 @@
 os.loadAPI("ws/Peripherals.lua"); local Peripherals = _G["Peripherals.lua"]
 
+--TODO: Move this to a better place
+if not os.getComputerLabel() then
+	os.setComputerLabel("Unnamed"..os.getComputerID())
+end
+
 local LEVEL_TRACE = 1
 local LEVEL_DEBUG = 2
 local LEVEL_INFO = 3

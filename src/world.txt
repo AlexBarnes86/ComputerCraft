@@ -1,0 +1,2 @@
+safeStartPos = 58, 174
+safeStartPos = 85, 109
