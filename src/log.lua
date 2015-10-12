@@ -6,31 +6,38 @@ local LEVEL_INFO = 3
 local LEVEL_WARN = 4
 local LEVEL_ERROR = 5
 
-local LEVEL_NAMES = {}
-LEVEL_NAMES[LEVEL_TRACE] = "TRACE"
-LEVEL_NAMES[LEVEL_DEBUG] = "DEBUG"
-LEVEL_NAMES[LEVEL_INFO] = "INFO"
-LEVEL_NAMES[LEVEL_WARN] = "WARN"
-LEVEL_NAMES[LEVEL_ERROR] = "ERROR"
+local LEVEL_NAMES = {
+	[LEVEL_TRACE] = "TRACE",
+	[LEVEL_DEBUG] = "DEBUG",
+	[LEVEL_INFO] = "INFO",
+	[LEVEL_WARN] = "WARN",
+	[LEVEL_ERROR] = "ERROR"
+}
 
-local LEVEL_COLORS = {}
-LEVEL_COLORS[LEVEL_TRACE] = colors.gray
-LEVEL_COLORS[LEVEL_DEBUG] = colors.lightGray
-LEVEL_COLORS[LEVEL_INFO] = colors.white
-LEVEL_COLORS[LEVEL_WARN] = colors.yellow
-LEVEL_COLORS[LEVEL_ERROR] = colors.red
+local LEVEL_COLORS = {
+	[LEVEL_TRACE] = colors.gray,
+	[LEVEL_DEBUG] = colors.lightGray,
+	[LEVEL_INFO] = colors.white,
+	[LEVEL_WARN] = colors.yellow,
+	[LEVEL_ERROR] = colors.red
+}
 
 local LOG_LEVEL = LEVEL_DEBUG
 
-local LOG_DIR = "logs/"
+local LOG_DIR = "ws/logs/"
 local res = http.get("http://www.timeapi.org/utc/now")
-local LOG_FILE = LOG_DIR..os.computerLabel().."_"..res.readAll()..".log"
+local date = string.match(res.readAll(), "^(%d%d%d%d%-%d%d%-%d%d)")
+local LOG_FILE = LOG_DIR..os.computerLabel().."_"..date..".log"
 local LOG_FD = fs.open(LOG_FILE, "a")
 
 function log(level, message)
 	if level >= LOG_LEVEL and level <= LEVEL_ERROR then
 		local time = os.clock()
-		local msg = LEVEL_NAMES[level].." ["..time.."]: "..message
+		local msg = message
+		if(not message) then
+			msg = "nil"
+		end
+		local msg = LEVEL_NAMES[level].." ["..time.."]: "..msg
 		LOG_FD.writeLine(msg)
 		LOG_FD.flush()
 		print(msg)
