@@ -1,0 +1,40 @@
+Objective: to create a swarm of turtles that are capable of gathering a variety of resources and building in a modularized fashion while communicating with a central command server
+
+Any coordinate can be defined as a path node and inserted into the server for pathfinding
+
+Different Zone Types:
+* Safe Zone: Turtles must not modify blocks in these regions
+* Dock: Special safe zone that is intended for a turtle to return to when not in use
+* Quary: Heavy resource extraction, every block in a defined region is intended for potential extraction and storage
+* Stockpile: Region intended to be converted into hallways of chests for various resources, each chest dedicated to a particular resource and indexed for retrieval and storage
+	Shape of hallway:
+
+            |-------------------|
+            |c|c|c|c|c|c|c|c|c|c|
+            |c|c|c|c|c|c|c|c|c|c|
+entrance>                       |  ...
+walkway<>                       |
+  exit<                         |
+            --------------------|
+
+	Signs should be placed above chests to indicate contents
+	Layer depicted should sit ontop of a stone floor, the layer above should be empty except for walls to make headroom, and the layer above that should be a stone ceiling
+
+	Indexed by floor, 
+
+Others zones to be defined later
+
+Each zone will consist of
+	Start Coordinate
+	End Coordinate
+
+	Entrance Node
+	Exit Node
+
+	Optional graph of path nodes
+
+For travel between nodes:
+	1) Navigate to exit node (if currently inside of a zone)
+	2) Go up into the sky at height proportional to distance needed to travel
+	3) Navigate to entrance node then descend to entrance node
+	4) Use graph of path nodes to navigate further if necessary

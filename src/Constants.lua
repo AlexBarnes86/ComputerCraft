@@ -22,4 +22,4 @@ COMMAND_MESSAGES = {
 	[COMMAND_MSG_STOP] = true
 }
 
-WORLD_FILE = "ws/world.txt"
+WORLD_FILE = "ws/data/world.txt"
