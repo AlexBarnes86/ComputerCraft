@@ -7,7 +7,7 @@ local Agent = {
 
 function Agent:turnLeft(n)
 	n = n or 1
-	for i = 0, n do
+	for i = 1, n do
 		self.heading = (self.heading + 1) % 4
 		turtle.turnLeft()
 	end
@@ -15,7 +15,7 @@ end
 
 function Agent:turnRight(n)
 	n = n or 1
-	for i = 0, n do
+	for i = 1, n do
 		self.heading = (self.heading - 1) % 4
 		turtle.turnRight()
 	end
@@ -23,7 +23,7 @@ end
 
 function Agent:forward(n)
 	n = n or 1
-	for i = 0, n do
+	for i = 1, n do
 		while not turtle.forward() do
 			if turtle.detect() then
 				turtle.dig()
@@ -32,9 +32,13 @@ function Agent:forward(n)
 			end
 		end
 
-		if self.heading % 2 == 0 then
+		if self.heading == 0 then
 			self.dy = self.dy + 1
-		else
+		elseif self.heading == 1 then
+			self.dx = self.dx - 1
+		elseif self.heading == 2 then
+			self.dy = self.dy - 1
+		elseif self.heading == 3 then
 			self.dx = self.dx + 1
 		end
 	end
@@ -42,7 +46,7 @@ end
 
 function Agent:down(n)
 	n = n or 1
-	for i = 0, n do
+	for i = 1, n do
 		while not turtle.down() do
 			if turtle.detectDown() then
 				turtle.digDown()
@@ -56,7 +60,7 @@ end
 
 function Agent:up(n)
 	n = n or 1
-	for i = 0, n do
+	for i = 1, n do
 		while not turtle.up() do
 			if turtle.detectUp() then
 				turtle.digUp()
@@ -70,7 +74,7 @@ end
 
 function Agent:back(n)
 	n = n or 1
-	for i = 0, n do
+	for i = 1, n do
 		if not turtle.back() then
 			self:turnLeft()
 			self:turnLeft()
@@ -79,9 +83,13 @@ function Agent:back(n)
 			self:turnLeft()
 		end
 
-		if self.heading % 2 == 0 then
+		if self.heading == 0 then
 			self.dy = self.dy - 1
-		else
+		elseif self.heading == 1 then
+			self.dx = self.dx + 1
+		elseif self.heading == 2 then
+			self.dy = self.dy + 1
+		elseif self.heading == 3 then
 			self.dx = self.dx - 1
 		end
 	end
@@ -153,7 +161,7 @@ function Agent:moveTo(x, y, z)
 		self:forward(self.dy - y)
 		self:turnRight()
 		self:turnRight()
-	else
+	elseif self.dy < y then
 		self:forward(y - self.dy)
 	end
 
@@ -161,7 +169,7 @@ function Agent:moveTo(x, y, z)
 		self:turnLeft()
 		self:forward(self.dx - x)
 		self:turnRight()
-	else
+	elseif self.dx < x then
 		self:turnRight()
 		self:forward(x - self.dx)
 		self:turnLeft()
@@ -169,10 +177,10 @@ function Agent:moveTo(x, y, z)
 
 	if self.dz > z then
 		self:down(self.dz - z)
-	else
+	elseif self.dz < z then
 		self:up(z - self.dz)
 	end
-	
+
 	while self.heading ~= origHeading do
 		self:turnLeft()
 	end
@@ -182,10 +190,12 @@ function Agent:digSquare(width, length)
 	for w = 1, width do
 		self:forward(length - 1)
 
-		if w % 2 == 0 then
-			self:uTurnLeft()
-		else
-			self:uTurnRight()
+		if w ~= width then
+			if w % 2 == 0 then
+				self:uTurnLeft()
+			else
+				self:uTurnRight()
+			end
 		end
 	end
 end
@@ -193,12 +203,16 @@ end
 function Agent:digCube(width, length, height)
 	local sx, sy, sz = gps.locate()
 
+	self:down()
 	for h = 1, height do
 		self:digSquare(width, length)
 		self:moveTo(0, 0, self.dz)
 		self:faceStartHeading()
-		self:down()
+		if h ~= height then
+			self:down()
+		end
 	end
+	self:moveTo(0, 0, 0)
 end
 
 function newAgent()
