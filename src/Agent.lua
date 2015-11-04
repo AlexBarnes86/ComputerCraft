@@ -5,6 +5,11 @@ local Agent = {
 	dz = 0
 }
 
+local HEADING_FORWARD = 0
+local HEADING_LEFT = 1
+local HEADING_BACK = 2
+local HEADING_RIGHT = 3
+
 function Agent:turnLeft(n)
 	n = n or 1
 	for i = 1, n do
@@ -120,6 +125,12 @@ function Agent:faceStartHeading()
 	end
 end
 
+function Agent:faceHeading(heading)
+	while self.heading ~= (heading % 4) do
+		self:turnLeft()
+	end
+end
+
 function Agent:build(map)
 	self:up()
 
@@ -155,34 +166,39 @@ end
 function Agent:moveTo(x, y, z)
 	local origHeading = self.heading
 	self:faceStartHeading()
-	if self.dy > y then
-		self:turnRight()
-		self:turnRight()
-		self:forward(self.dy - y)
-		self:turnRight()
-		self:turnRight()
-	elseif self.dy < y then
-		self:forward(y - self.dy)
-	end
 
-	if self.dx > x then
-		self:turnLeft()
-		self:forward(self.dx - x)
-		self:turnRight()
-	elseif self.dx < x then
-		self:turnRight()
-		self:forward(x - self.dx)
-		self:turnLeft()
-	end
-
-	if self.dz > z then
-		self:down(self.dz - z)
-	elseif self.dz < z then
-		self:up(z - self.dz)
-	end
+	self:move(y - self.dy, x - self.dx, z - self.dz)
 
 	while self.heading ~= origHeading do
 		self:turnLeft()
+	end
+end
+
+function Agent:move(x, y, z)
+	if y < 0 then
+		self:turnRight()
+		self:turnRight()
+		self:forward(-y)
+		self:turnRight()
+		self:turnRight()
+	elseif y > 0 then
+		self:forward(y)
+	end
+
+	if x < 0 then
+		self:turnLeft()
+		self:forward(-x)
+		self:turnRight()
+	elseif x > 0 then
+		self:turnRight()
+		self:forward(x)
+		self:turnLeft()
+	end
+
+	if z < 0 then
+		self:down(-z)
+	elseif z > 0 then
+		self:up(z)
 	end
 end
 
@@ -203,16 +219,44 @@ end
 function Agent:digCube(width, length, height)
 	local sx, sy, sz = gps.locate()
 
-	self:down()
 	for h = 1, height do
+		self:down()
 		self:digSquare(width, length)
 		self:moveTo(0, 0, self.dz)
 		self:faceStartHeading()
-		if h ~= height then
-			self:down()
+	end
+end
+
+--TODO: Maintain index of items in inventory
+function Agent:selectItemByName(name)
+	local origSlot = turtle.getSelectedSlot()
+	for i = 1, 16 do
+		turtle.select(i)
+		local detail = turtle.getItemDetail()
+		if detail ~= nil and detail.name == name then
+			return turtle.getItemCount()
 		end
 	end
-	self:moveTo(0, 0, 0)
+	turtle.select(origSlot)
+	return 0
+end
+
+function Agent:buildStockpile(depth, width, length, height)
+	self:digCube(3, 3, depth)
+	self:moveTo(0, 0, self.dz)
+	self:faceStartHeading()
+	self:digCube(width, length, height)
+
+	if self:selectItemByName("minecraft:ladder") >= -self.dz then
+		self:moveTo(1, 2, self.dz)
+		self:faceHeading(HEADING_BACK)
+		while self.dz ~= 0 do
+			turtle.place()
+			self:up()
+		end
+	else
+		self:moveTo(0, 0, 0)
+	end
 end
 
 function newAgent()
