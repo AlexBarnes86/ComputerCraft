@@ -1,14 +1,27 @@
-local Agent = {
-	heading = 0,
-	dx = 0,
-	dy = 0,
-	dz = 0
-}
+local InventoryItem = {}
+
+function InventoryItem:print()
+	print("Item: {name: "..self.name..", total: "..self.total..", slots: ["..table.concat(self.slots, ", ").."]}")
+end
+
+function newInventoryItem(name, total, slots)
+	local item = {
+		name = name,
+		total = total,
+		slots = slots
+	}
+	for k, v in pairs(InventoryItem) do
+		item[k] = v
+	end
+	return item
+end
 
 local HEADING_FORWARD = 0
 local HEADING_LEFT = 1
 local HEADING_BACK = 2
 local HEADING_RIGHT = 3
+
+local Agent = {}
 
 function Agent:turnLeft(n)
 	n = n or 1
@@ -227,20 +240,6 @@ function Agent:digCube(width, length, height)
 	end
 end
 
---TODO: Maintain index of items in inventory
-function Agent:selectItemByName(name)
-	local origSlot = turtle.getSelectedSlot()
-	for i = 1, 16 do
-		turtle.select(i)
-		local detail = turtle.getItemDetail()
-		if detail ~= nil and detail.name == name then
-			return turtle.getItemCount()
-		end
-	end
-	turtle.select(origSlot)
-	return 0
-end
-
 function Agent:buildStockpile(depth, width, length, height)
 	self:digCube(3, 3, depth)
 	self:moveTo(0, 0, self.dz)
@@ -251,7 +250,7 @@ function Agent:buildStockpile(depth, width, length, height)
 		self:moveTo(1, 2, self.dz)
 		self:faceHeading(HEADING_BACK)
 		while self.dz ~= 0 do
-			turtle.place()
+			self:place()
 			self:up()
 		end
 	else
@@ -259,10 +258,78 @@ function Agent:buildStockpile(depth, width, length, height)
 	end
 end
 
+function Agent:selectItemByName(name)
+	local index = self.inventory[name]
+	if index ~= nil then
+		turtle.select(index)
+	end
+	return 0
+end
+
+function Agent:refreshInventory()
+	self.inventory = {}
+	for i = 1, 16 do
+		local detail = turtle.getItemDetail(i)
+		if detail then
+			local item = self.inventory[detail.name]
+			if item then
+				item.total = item.total + detail.count
+				item.slots[#item.slots+1] = i
+			else
+				self.inventory[detail.name] = newInventoryItem(detail.name, detail.count, {i})
+			end
+		end
+	end
+end
+
+function Agent:printInventory()
+	for _, item in pairs(self.inventory) do
+		item:print();
+	end
+end
+
+--description:
+--  Guarantees we only place items of a particular type that we intend to place
+--params:
+--  name - example: "minecraft:dirt"
+--returns:
+--  item count remaining, -1 if item is not available to be placed
+function Agent:place(name)
+	local item = self.inventory[name]
+	if item ~= nil then
+		turtle.select(item.slots[1])
+		turtle.place()
+
+		item.total = item.total - 1
+
+		--Move on to the next available slot if possible when we run out of an item
+		--Check detail name instead of item count for edge case when the turtle immediately
+		--picks up a new item to fill the current slot
+		local detail = turtle.getItemDetail()
+		if detail == nil or detail.name ~= name then
+			if #item.slots == 1 then
+				self.inventory[name] = nil
+			else
+				table.remove(item.slots, 1)
+			end
+		end
+
+		return item.total
+	end
+	return -1
+end
+
 function newAgent()
-	local agent = {}
+	local agent = {
+		heading = 0,
+		dx = 0,
+		dy = 0,
+		dz = 0,
+		inventory = {}
+	}
 	for k, v in pairs(Agent) do
 		agent[k] = v
 	end
-	return agent
+	agent:refreshInventory()
+	return agent;
 end
