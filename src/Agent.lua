@@ -180,7 +180,7 @@ function Agent:moveTo(x, y, z)
 	local origHeading = self.heading
 	self:faceStartHeading()
 
-	self:move(y - self.dy, x - self.dx, z - self.dz)
+	self:move(x - self.dx, y - self.dy, z - self.dz)
 
 	while self.heading ~= origHeading do
 		self:turnLeft()
@@ -242,26 +242,26 @@ end
 
 function Agent:buildStockpile(depth, width, length, height)
 	self:digCube(3, 3, depth)
-	self:moveTo(0, 0, self.dz)
-	self:faceStartHeading()
 	self:digCube(width, length, height)
 
 	if self:selectItemByName("minecraft:ladder") >= -self.dz then
-		self:moveTo(1, 2, self.dz)
+		self:moveTo(1, 1, self.dz)
 		self:faceHeading(HEADING_BACK)
 		while self.dz ~= 0 do
-			self:place()
+			self:place("minecraft:ladder")
 			self:up()
 		end
-	else
-		self:moveTo(0, 0, 0)
 	end
+
+	self:moveTo(0, 0, 0)
+	self:faceHeading(HEADING_FORWARD)
 end
 
 function Agent:selectItemByName(name)
-	local index = self.inventory[name]
-	if index ~= nil then
-		turtle.select(index)
+	local item = self.inventory[name]
+	if item ~= nil then
+		turtle.select(item.slots[1])
+		return item.total
 	end
 	return 0
 end
@@ -288,12 +288,27 @@ function Agent:printInventory()
 	end
 end
 
---description:
---  Guarantees we only place items of a particular type that we intend to place
---params:
---  name - example: "minecraft:dirt"
---returns:
---  item count remaining, -1 if item is not available to be placed
+function Agent:printLocation()
+	print("Location: ("..self.dx..", "..self.dy..", "..self.dz..")")
+end
+
+function Agent:printHeading()
+	local heading = "Unkown"
+	if self.heading == HEADING_FORWARD then
+		heading = "Forward"
+	elseif self.heading == HEADING_RIGHT then
+		heading = "Right"
+	elseif self.heading == HEADING_BACK then
+		heading = "Back"
+	elseif self.heading == HEADING_LEFT then
+		heading = "Left"
+	end
+	print("Heading: "..heading)
+end
+
+--description: Guarantees we only place items of a particular type that we intend to place
+--params: name - example: "minecraft:dirt"
+--returns: item count remaining, -1 if item is not available to be placed
 function Agent:place(name)
 	local item = self.inventory[name]
 	if item ~= nil then
